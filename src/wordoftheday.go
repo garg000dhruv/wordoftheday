@@ -10,50 +10,6 @@ import (
 	"time"
 )
 
-type WordlistMetadata struct {
-	Provider       string `json:"provider"`
-	SourceLanguage string `json:"sourceLanguage"`
-	Limit          int    `json:"limit"`
-	Offset         int    `json:"offset"`
-	Total          int    `json:"total"`
-}
-
-type WordMetadata struct {
-	Id             string         `json:"id"`
-	Language       string         `json:"language"`
-	Type           string         `json:"type"`
-	Word           string         `json:"word"`
-	LexicalEntries []LexicalEntry `json:"lexicalEntries"`
-}
-
-type Wordlist struct {
-	Metadata WordlistMetadata `"json:metadata"`
-	Results  []WordMetadata   `"json:results"`
-}
-
-type Sense struct {
-	Id          string    `json:"id"`
-	Definitions []string  `json:"definitions"`
-	Domains     []string  `json:"domains"`
-	Examples    []Example `json:"examples"`
-}
-
-type Example struct {
-	Text string `json:"text"`
-}
-
-type Entry struct {
-	Etymologies []string `json:"etymologies"`
-	Senses      []Sense  `json:"senses"`
-}
-
-type LexicalEntry struct {
-	Language        string  `json:"language"`
-	LexicalCategory string  `json:"lexicalCategory"`
-	Text            string  `json:"text"`
-	Entries         []Entry `json:"entries"`
-}
-
 func main() {
 	var app_id = os.Args[1]
 	var app_key = os.Args[2]
