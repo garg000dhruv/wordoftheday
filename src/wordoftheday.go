@@ -13,19 +13,45 @@ import (
 type WordlistMetadata struct {
 	Provider       string `json:"provider"`
 	SourceLanguage string `json:"sourceLanguage"`
-	Total          int    `json:"total"`
 	Limit          int    `json:"limit"`
 	Offset         int    `json:"offset"`
+	Total          int    `json:"total"`
 }
 
 type WordMetadata struct {
-	Id   string `json:"id"`
-	Word string `json:"word"`
+	Id             string         `json:"id"`
+	Language       string         `json:"language"`
+	Type           string         `json:"type"`
+	Word           string         `json:"word"`
+	LexicalEntries []LexicalEntry `json:"lexicalEntries"`
 }
 
 type Wordlist struct {
 	Metadata WordlistMetadata `"json:metadata"`
 	Results  []WordMetadata   `"json:results"`
+}
+
+type Sense struct {
+	Id          string    `json:"id"`
+	Definitions []string  `json:"definitions"`
+	Domains     []string  `json:"domains"`
+	Examples    []Example `json:"examples"`
+}
+
+type Example struct {
+	Text string `json:"text"`
+}
+
+type Entry struct {
+	Etymologies []string `json:"etymologies"`
+	Senses      []Sense  `json:"senses"`
+}
+
+type LexicalEntry struct {
+	Language        string  `json:"language"`
+	LexicalCategory string  `json:"lexicalCategory"`
+	Text            string  `json:"text"`
+	Entries         []Entry `json:"entries"`
 }
 
 func main() {
@@ -63,5 +89,33 @@ func main() {
 
 	// Retrieve information for a randomly selected word from the domain-filtered list.
 	var randomSelectedWord = filteredWordlist.Results[r1.Intn(len(filteredWordlist.Results))].Word
-	fmt.Printf("Word of the Day in domain '%s': %s\n", domainToFilter, randomSelectedWord)
+
+	wordDefReq, _ := http.NewRequest("GET", "https://od-api.oxforddictionaries.com:443/api/v1/entries/en/"+randomSelectedWord, nil)
+
+	wordDefReq.Header.Add("Accept", "application/json")
+	wordDefReq.Header.Add("app_id", app_id)
+	wordDefReq.Header.Add("app_key", app_key)
+
+	wordDefResp, _ := client.Do(wordDefReq)
+
+	defer wordDefResp.Body.Close()
+
+	var selectedWordMetadata = new(Wordlist)
+	wordDefBody, _ := ioutil.ReadAll(wordDefResp.Body)
+	selectedWordMetadataErr := json.Unmarshal(wordDefBody, &selectedWordMetadata)
+	if selectedWordMetadataErr != nil {
+		panic(selectedWordMetadataErr)
+	}
+
+	fmt.Printf("Word of the Day in domain '%s': %s\n", domainToFilter, selectedWordMetadata.Results[0].Word)
+
+	// Print the different definitions for the selected word under every lexical category.
+	for _, lexicalEntry := range selectedWordMetadata.Results[0].LexicalEntries {
+		fmt.Printf("[%s]\n", lexicalEntry.LexicalCategory)
+		for _, entry := range lexicalEntry.Entries {
+			for index, sense := range entry.Senses {
+				fmt.Printf("\tDefinition %v: %v\n", index+1, sense.Definitions)
+			}
+		}
+	}
 }
